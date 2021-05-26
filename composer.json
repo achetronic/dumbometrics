@@ -1,0 +1,29 @@
+{
+  "name": "achetronic/metrics-server",
+  "description": "Set custom metrics on your code. Automagically web-exposed for Prometheus",
+  "type": "library",
+  "license": "GPL-3.0-or-later",
+  "require": {
+    "cache/filesystem-adapter": "^1.1",
+    "cache/namespaced-cache": "^1.1",
+    "promphp/prometheus_client_php": "^2.2",
+    "react/event-loop": "^1.1.1",
+    "react/http": "^1.3",
+    "react/socket": "^1.6"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true,
+    "preferred-install": {
+      "*": "dist"
+    },
+    "platform": {
+      "php": "7.3"
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "Achetronic\\MetricsServer\\": "src/"
+    }
+  }
+}
