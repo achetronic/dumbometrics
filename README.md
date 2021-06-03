@@ -1,4 +1,4 @@
-# Metrics Server
+# Dumbometrics
 
 ### Description
 Package that stores metrics on cache and exposes an endpoint with them 
@@ -22,7 +22,7 @@ composer require achetronic/metrics-server
 
 3. (Optional) Flush the metrics
 ```php
-use \Achetronic\MetricsServer\Controller\PrometheusController;
+use \Achetronic\Dumbometrics\Controller\PrometheusController;
 
 $metrics = new PrometheusController();
 
@@ -31,7 +31,7 @@ $metrics->flush();
 
 4. Store some metrics wherever you need it
 ```php
-use \Achetronic\MetricsServer\Controller\PrometheusController as Prometheus;
+use \Achetronic\Dumbometrics\Controller\PrometheusController as Prometheus;
 
 $metrics = new Prometheus();
 
@@ -45,7 +45,7 @@ $this->metrics->setGauge('some_example_gauge', 10, ['value1', 'value2']);
 
 5. Start the server 
 ```php
-use \Achetronic\MetricsServer\Controller\WebserverController as Webserver;
+use \Achetronic\Dumbometrics\Controller\WebserverController as Webserver;
 
 $server = new Webserver;
 
@@ -54,7 +54,7 @@ $server->loop();
 
 6. (Optional) Start the server using callbacks
 ```php
-use \Achetronic\MetricsServer\Controller\WebserverController as Webserver;
+use \Achetronic\Dumbometrics\Controller\WebserverController as Webserver;
 
 $server = new Webserver;
 

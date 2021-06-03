@@ -1,13 +1,13 @@
 <?php
 
-namespace Zinio\MetricsServer\Controller;
+namespace Achetronic\Dumbometrics\Controller;
 
-use Zinio\MetricsServer\Controller\PrometheusController;
+use Achetronic\Dumbometrics\Controller\PrometheusController;
 
 final class ExampleController
 {
     /**
-     * @var \Zinio\MetricsServer\Controller\PrometheusController $metrics
+     * @var \Achetronic\Dumbometrics\Controller\PrometheusController $metrics
      */
     private $metrics;
 

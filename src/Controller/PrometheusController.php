@@ -1,6 +1,6 @@
 <?php
 
-namespace Zinio\MetricsServer\Controller;
+namespace Achetronic\Dumbometrics\Controller;
 
 # REF: https://github.com/promphp/prometheus_client_php
 # REF: https://prometheus.io/docs/concepts/metric_types/
@@ -50,7 +50,7 @@ final class PrometheusController
      */
     private function setCachePool()
     {
-        $filesystemAdapter = new Local('/tmp/cache/zinio/metrics-server/');
+        $filesystemAdapter = new Local('/tmp/cache/achetronic/dumbometrics/');
         $filesystem        = new Filesystem($filesystemAdapter);
         $this->pool        = new FilesystemCachePool($filesystem, $this->namespace);
     }
@@ -98,7 +98,7 @@ final class PrometheusController
             $this->namespace = strtolower($namespace);
             return;
         }
-        $this->namespace = "custom_metrics_fallback_namespace";
+        $this->namespace = "dumbometrics";
     }
 
     /**
@@ -108,12 +108,23 @@ final class PrometheusController
      */
     public function flush()
     {
-        $item = $this->pool->getItem('metrics')->set(new InMemory);
+        $item = $this->pool->getItem('metrics')->set(new InMemory());
         $this->pool->save($item);
 
         # Point Prometheus to the new pool's item
         $this->setMemory();
         $this->setRegistry();
+    }
+
+    /**
+     * Sync cache with memory content
+     *
+     * @return void
+     */
+    protected function syncCache()
+    {
+       $item = $this->pool->getItem('metrics')->set($this->memory);
+       $this->pool->save($item);
     }
 
     /**
@@ -125,13 +136,29 @@ final class PrometheusController
      *
      * @return void
      */
-     public function registerCounter(string $name, string $description = '', array $labels = [])
-     {
+
+    public function registerCounter(string $name, string $description = '', array $labels = [])
+    {
         $counter = $this->registry->registerCounter($this->namespace, $name, $description, $labels);
 
-        $item = $this->pool->getItem('metrics')->set($this->memory);
-        $this->pool->save($item);
-     }
+        $this->syncCache();
+    }
+
+    /**
+     * Get or register a counter to store information inside
+     *
+     * @param string $name         The name of the item to register
+     * @param string $description  A message to help to understand the item
+     * @param array  labels
+     *
+     * @return void
+     */
+    public function getOrRegisterCounter(string $name, string $description = '', array $labels = [])
+    {
+       $counter = $this->registry->getOrRegisterCounter($this->namespace, $name, $description, $labels);
+
+       $this->syncCache();
+    }
 
     /**
      * Set a counter by aggregating the number of value
@@ -142,14 +169,13 @@ final class PrometheusController
      *
      * @return void
      */
-     public function setCounter(string $name, float $value = 1, array $labels = [])
-     {
+    public function setCounter(string $name, float $value = 1, array $labels = [])
+    {
         $counter = $this->registry->getCounter($this->namespace, $name);
         $counter->incBy($value, $labels);
 
-        $item = $this->pool->getItem('metrics')->set($this->memory);
-        $this->pool->save($item);
-     }
+        $this->syncCache();
+    }
 
      /**
       * Register a gauge to store metrics
@@ -161,12 +187,11 @@ final class PrometheusController
       * @return void
       */
      public function registerGauge(string $name, string $description = '', array $labels = [])
-     {
+    {
         $counter = $this->registry->registerGauge($this->namespace, $name, $description, $labels);
 
-        $item = $this->pool->getItem('metrics')->set($this->memory);
-        $this->pool->save($item);
-     }
+        $this->syncCache();
+    }
 
      /**
       * Set a gauge to the desired value
@@ -177,14 +202,29 @@ final class PrometheusController
       *
       * @return void
       */
-     public function setGauge(string $name, float $value, array $labels = [])
-     {
+    public function setGauge(string $name, float $value, array $labels = [])
+    {
         $counter = $this->registry->getGauge($this->namespace, $name);
         $counter->set($value, $labels);
 
-        $item = $this->pool->getItem('metrics')->set($this->memory);
-        $this->pool->save($item);
-     }
+        $this->syncCache();
+    }
+
+    /**
+     * Get or register a gauge to store information inside
+     *
+     * @param string $name         The name of the item to register
+     * @param string $description  A message to help to understand the item
+     * @param array  labels
+     *
+     * @return void
+     */
+    public function getOrRegisterGauge(string $name, string $description = '', array $labels = [])
+    {
+       $counter = $this->registry->getOrRegisterGauge($this->namespace, $name, $description, $labels);
+
+       $this->syncCache();
+    }
 
      /**
       * Get a string with syntax ready for Prometheus

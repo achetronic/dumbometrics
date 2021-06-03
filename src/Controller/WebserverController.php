@@ -2,7 +2,7 @@
 
 declare( strict_types = 1 );
 
-namespace Zinio\MetricsServer\Controller;
+namespace Achetronic\Dumbometrics\Controller;
 
 use \React\EventLoop\Factory;
 use \React\Http\Server as HttpServer;
@@ -10,8 +10,8 @@ use \React\Socket\Server as SocketServer;
 use \React\Http\Message\Response as HttpResponse;
 use \Psr\Http\Message\ServerRequestInterface as HttpRequest;
 
-use \Zinio\MetricsServer\Controller\PrometheusController;
-use \Zinio\MetricsServer\Controller\ExampleController;
+use \Achetronic\Dumbometrics\Controller\PrometheusController;
+use \Achetronic\Dumbometrics\Controller\ExampleController;
 
 final class WebserverController
 {
