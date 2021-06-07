@@ -2,7 +2,7 @@
 
 declare( strict_types = 1 );
 
-namespace Achetronic\Dumbometrics\Controller;
+namespace Achetronic\Dumbometrics\Implementation;
 
 use \React\EventLoop\Factory;
 use \React\Http\Server as HttpServer;
@@ -10,10 +10,11 @@ use \React\Socket\Server as SocketServer;
 use \React\Http\Message\Response as HttpResponse;
 use \Psr\Http\Message\ServerRequestInterface as HttpRequest;
 
-use \Achetronic\Dumbometrics\Controller\PrometheusController;
+use \Achetronic\Dumbometrics\Contract\Server;
+use \Achetronic\Dumbometrics\Implementation\Prometheus;
 use \Achetronic\Dumbometrics\Controller\ExampleController;
 
-final class WebserverController
+final class Webserver implements Server
 {
     protected $ip;
 
@@ -53,7 +54,7 @@ final class WebserverController
      *
      * @return void
      */
-    protected function setIp ( string $value )
+    public function setIp (string $value): void
     {
         $this->ip = $value;
     }
@@ -63,7 +64,7 @@ final class WebserverController
      *
      * @return string
      */
-    protected function getIp ( ) : ?string
+    public function getIp (): ?string
     {
         return $this->ip;
     }
@@ -75,7 +76,7 @@ final class WebserverController
      *
      * @return void
      */
-    protected function setPort ( string $value )
+    public function setPort (string $value): void
     {
         $this->port = $value;
     }
@@ -85,7 +86,7 @@ final class WebserverController
      *
      * @return string
      */
-    protected function getPort ( ) : ?string
+    public function getPort (): ?string
     {
         return $this->port;
     }
@@ -96,7 +97,7 @@ final class WebserverController
      * @param callable $callback
      * @return void
      */
-    public function setInitCallback (callable $callback)
+    public function setInitCallback (callable $callback): void
     {
         $this->initCallback = $callback;
     }
@@ -107,7 +108,7 @@ final class WebserverController
      * @param callable $callback
      * @return void
      */
-    public function setRequestInitCallback (callable $callback)
+    public function setRequestInitCallback (callable $callback): void
     {
         $this->requestInitCallback = $callback;
     }
@@ -118,7 +119,7 @@ final class WebserverController
      * @param callable $callback
      * @return void
      */
-    public function setRequestFinalCallback (callable $callback)
+    public function setRequestFinalCallback (callable $callback): void
     {
         $this->requestFinalCallback = $callback;
     }
@@ -128,7 +129,7 @@ final class WebserverController
      *
      * @return void
      */
-    public function loop()
+    public function loop (): void
     {
         $initCallback = $this->initCallback;
         $requestInitCallback = $this->requestInitCallback;
@@ -152,17 +153,7 @@ final class WebserverController
                     $response = new HttpResponse(
                         200,
                         ['Content-Type' => 'text/plain'],
-                        (new PrometheusController)->renderMetrics()
-                    );
-                }
-            }
-
-            if ($path === '/healthz') {
-                if ($method === 'GET') {
-                    $response = new HttpResponse(
-                        200,
-                        ['Content-Type' => 'text/plain'],
-                        'Work in progress'
+                        (new Prometheus)->renderMetrics()
                     );
                 }
             }
@@ -172,7 +163,17 @@ final class WebserverController
                     $response = new HttpResponse(
                         200,
                         ['Content-Type' => 'text/plain'],
-                        (new ExampleController)->exampleAction()
+                        (new ExampleController)->exampleMetricsAction()
+                    );
+                }
+            }
+
+            if ($path === '/example/flush') {
+                if ($method === 'GET') {
+                    $response = new HttpResponse(
+                        200,
+                        ['Content-Type' => 'text/plain'],
+                        (new ExampleController)->exampleFlushAction()
                     );
                 }
             }
@@ -203,10 +204,9 @@ final class WebserverController
         $server->listen($socket);
 
         echo "Metrics server running at http://".$this->getIp().':'.$this->getPort() . PHP_EOL;
-        echo "Available endpoints:". PHP_EOL;
         echo "/metrics instrumented for Prometheus". PHP_EOL;
-        echo "/healthz instrumented for Docker/Kubernetes". PHP_EOL;
         echo "/example/metrics set some fake metrics". PHP_EOL;
+        echo "/example/flush flush all metrics". PHP_EOL;
         echo "/example/delay set a fake delay". PHP_EOL;
 
         // Execute init callback when server starts
@@ -216,9 +216,4 @@ final class WebserverController
 
         $loop->run();
     }
-
-
-
-
-
 }
