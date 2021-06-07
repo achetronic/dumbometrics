@@ -10,28 +10,28 @@ to allow Prometheus to scrape them
 "repositories": [
   {
     "type": "vcs",
-    "url": "git@github.com:achetronic/metrics-server.git"
+    "url": "git@github.com:achetronic/dumbometrics.git"
   }
 ]
 ```
 
 2. Install the package
 ```text
-composer require achetronic/metrics-server
+composer require achetronic/dumbometrics
 ```
 
 3. (Optional) Flush the metrics
 ```php
-use \Achetronic\Dumbometrics\Controller\PrometheusController;
+use \Achetronic\Dumbometrics\Implementation\Prometheus;
 
-$metrics = new PrometheusController();
+$metrics = new Prometheus();
 
 $metrics->flush();
 ```
 
 4. Store some metrics wherever you need it
 ```php
-use \Achetronic\Dumbometrics\Controller\PrometheusController as Prometheus;
+use \Achetronic\Dumbometrics\Implementation\Prometheus;
 
 $metrics = new Prometheus();
 
@@ -45,7 +45,7 @@ $this->metrics->setGauge('some_example_gauge', 10, ['value1', 'value2']);
 
 5. Start the server 
 ```php
-use \Achetronic\Dumbometrics\Controller\WebserverController as Webserver;
+use \Achetronic\Dumbometrics\Implementation\Webserver;
 
 $server = new Webserver;
 
@@ -54,7 +54,7 @@ $server->loop();
 
 6. (Optional) Start the server using callbacks
 ```php
-use \Achetronic\Dumbometrics\Controller\WebserverController as Webserver;
+use \Achetronic\Dumbometrics\Implementation\Webserver;
 
 $server = new Webserver;
 
@@ -93,4 +93,4 @@ $server->loop();
 |---|---|
 | `METRICS_IP` | The IP server will be listening on. By default `0.0.0.0` |
 | `METRICS_PORT` | The port server will be listening on. By default `9090` |
-| `METRICS_NAMESPACE` | The namespace where the server will work. By default `custom_metrics_fallback_namespace` |
+| `METRICS_NAMESPACE` | The namespace where the server will work. By default `dumbometrics` |

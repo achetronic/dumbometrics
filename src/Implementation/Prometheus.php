@@ -1,6 +1,10 @@
 <?php
 
-namespace Achetronic\Dumbometrics\Controller;
+declare( strict_types = 1 );
+
+namespace Achetronic\Dumbometrics\Implementation;
+
+use \Achetronic\Dumbometrics\Contract\Metrics;
 
 # REF: https://github.com/promphp/prometheus_client_php
 # REF: https://prometheus.io/docs/concepts/metric_types/
@@ -14,7 +18,7 @@ use \League\Flysystem\Adapter\Local;
 use \League\Flysystem\Filesystem;
 use \Cache\Adapter\Filesystem\FilesystemCachePool;
 
-final class PrometheusController
+final class Prometheus implements Metrics
 {
     /**
      * The namespace for the metrics into Prometheus
@@ -36,7 +40,11 @@ final class PrometheusController
      */
     public function __Construct()
     {
-        $this->setNamespace();
+        $this->setNamespace("dumbometrics");
+        if( !empty($_SERVER['METRICS_NAMESPACE']) ) {
+            $this->setNamespace(strtolower($_SERVER['METRICS_NAMESPACE']));
+        }
+
         $this->setCachePool();
         $this->setMemory();
         $this->setRegistry();
@@ -89,16 +97,7 @@ final class PrometheusController
      */
     private function setNamespace(string $namespace = '')
     {
-        if( !empty($_SERVER['METRICS_NAMESPACE']) ) {
-            $this->namespace = strtolower($_SERVER['METRICS_NAMESPACE']);
-            return;
-        }
-
-        if( !empty($namespace) ){
-            $this->namespace = strtolower($namespace);
-            return;
-        }
-        $this->namespace = "dumbometrics";
+        $this->namespace = strtolower($namespace);
     }
 
     /**
@@ -142,6 +141,20 @@ final class PrometheusController
         $counter = $this->registry->registerCounter($this->namespace, $name, $description, $labels);
 
         $this->syncCache();
+    }
+
+    /**
+     * Get or register a counter to store information inside
+     *
+     * @param string $name         The name of the item to register
+     *
+     * @return void
+     */
+    public function getCounter(string $name)
+    {
+       $counter = $this->registry->getCounter($this->namespace, $name);
+
+       $this->syncCache();
     }
 
     /**
@@ -193,21 +206,18 @@ final class PrometheusController
         $this->syncCache();
     }
 
-     /**
-      * Set a gauge to the desired value
-      *
-      * @param string $name         The name of the item to register
-      * @param string $description  A message to help to understand the item
-      * @param float  $value        The value of the item
-      *
-      * @return void
-      */
-    public function setGauge(string $name, float $value, array $labels = [])
+    /**
+     * Get a gauge to store information inside
+     *
+     * @param string $name    The name of the item to register
+     *
+     * @return void
+     */
+    public function getGauge(string $name)
     {
-        $counter = $this->registry->getGauge($this->namespace, $name);
-        $counter->set($value, $labels);
+       $counter = $this->registry->getGauge($this->namespace, $name, $description, $labels);
 
-        $this->syncCache();
+       $this->syncCache();
     }
 
     /**
@@ -224,6 +234,23 @@ final class PrometheusController
        $counter = $this->registry->getOrRegisterGauge($this->namespace, $name, $description, $labels);
 
        $this->syncCache();
+    }
+
+     /**
+      * Set a gauge to the desired value
+      *
+      * @param string $name         The name of the item to register
+      * @param string $description  A message to help to understand the item
+      * @param float  $value        The value of the item
+      *
+      * @return void
+      */
+    public function setGauge(string $name, float $value, array $labels = [])
+    {
+        $counter = $this->registry->getGauge($this->namespace, $name);
+        $counter->set($value, $labels);
+
+        $this->syncCache();
     }
 
      /**

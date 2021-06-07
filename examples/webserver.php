@@ -2,7 +2,7 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use \Achetronic\Dumbometrics\Controller\WebserverController as Webserver;
+use \Achetronic\Dumbometrics\Implementation\Webserver;
 
 $server = new Webserver;
 
