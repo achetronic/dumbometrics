@@ -12,11 +12,8 @@ use \Prometheus\CollectorRegistry;
 use \Prometheus\Storage\InMemory;
 use \Prometheus\RenderTextFormat;
 
-# REF: http://www.php-cache.com/en/latest/
-# REF: https://github.com/php-cache/filesystem-adapter
-use \League\Flysystem\Adapter\Local;
-use \League\Flysystem\Filesystem;
-use \Cache\Adapter\Filesystem\FilesystemCachePool;
+# Ref:
+use Apix\Cache;
 
 final class Prometheus implements Metrics
 {
@@ -58,9 +55,13 @@ final class Prometheus implements Metrics
      */
     private function setCachePool()
     {
-        $filesystemAdapter = new Local('/tmp/cache/achetronic/dumbometrics/');
-        $filesystem        = new Filesystem($filesystemAdapter);
-        $this->pool        = new FilesystemCachePool($filesystem, $this->namespace);
+        $options['directory'] = sys_get_temp_dir() . '/achetronic/dumbometrics/';
+        $options['locking'] = true;
+
+        $files_cache = new Cache\Files($options);
+        $this->pool = Cache\Factory::getPool($files_cache);
+
+        echo sys_get_temp_dir() . '/achetronic/dumbometrics/';
     }
 
     /**

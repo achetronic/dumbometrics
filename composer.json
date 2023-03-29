@@ -4,8 +4,7 @@
   "type": "library",
   "license": "GPL-3.0-or-later",
   "require": {
-    "cache/filesystem-adapter": ">=1.1",
-    "cache/namespaced-cache": ">=1.1",
+    "apix/cache": "^1.3",
     "promphp/prometheus_client_php": ">=2.2",
     "react/event-loop": ">=1.1",
     "react/http": ">=1.3",
