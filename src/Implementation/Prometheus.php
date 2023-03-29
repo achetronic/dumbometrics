@@ -18,19 +18,26 @@ use Apix\Cache;
 final class Prometheus implements Metrics
 {
     /**
+     * Pointer to the cache pool
+     */
+    private $cachePool;
+
+    /**
      * The namespace for the metrics into Prometheus
      */
     private $namespace;
 
     /**
-     * Cache pool
+     * InMemory object stored into (and recovered from) cache
+     * Prometheus' Collector needs an adapter used as realtime data exchange point.
+     * This is exactly that, for being stored into memory
      */
-    private $pool;
+    private $inMemoryData;
 
     /**
      * Prometheus Client's abstract registry where aggregate the metrics
      */
-    private $registry;
+    private $collectorRegistry;
 
     /**
      *
@@ -43,13 +50,13 @@ final class Prometheus implements Metrics
         }
 
         $this->setCachePool();
-        $this->setMemory();
-        $this->setRegistry();
+        $this->recoverInMemoryFromCache();
+        $this->setCollectorRegistry();
     }
 
     /**
-     * Craft a cache pool ready to store data
-     * and stores it into the object
+     * Craft a cache pool to store data into filesystem
+     * Stores it into this object
      *
      * @return void
      */
@@ -59,24 +66,26 @@ final class Prometheus implements Metrics
         $options['locking'] = true;
 
         $files_cache = new Cache\Files($options);
-        $this->pool = Cache\Factory::getPool($files_cache);
-
-        echo sys_get_temp_dir() . '/achetronic/dumbometrics/';
+        $this->cachePool = Cache\Factory::getPool($files_cache);
     }
 
     /**
-     * Craft a swap memory to allow Prometheus Collector Registry store data.
+     * Recover Prometheus' InMemory object from cache.
+     * Create a new InMemory object when it does not exist.
      * Stores it into the object
      *
      * @return void
      */
-    public function setMemory()
+    public function recoverInMemoryFromCache() // TODO Improve the naming for this process
     {
-        if ( !$this->pool->hasItem('metrics') ) {
-            $item = $this->pool->getItem('metrics')->set(new InMemory());
-            $this->pool->save($item);
+        // No metrics object on cache, generate a new one
+        if ( !$this->cachePool->hasItem('metrics') ) {
+            $item = $this->cachePool->getItem('metrics')->set(new InMemory());
+            $this->cachePool->save($item);
         }
-        $this->memory = $this->pool->getItem('metrics')->get();
+
+        // Get metrics object from cache
+        $this->inMemoryObject = $this->cachePool->getItem('metrics')->get();
     }
 
     /**
@@ -85,9 +94,9 @@ final class Prometheus implements Metrics
      *
      * @return void
      */
-    public function setRegistry()
+    public function setCollectorRegistry()
     {
-        $this->registry  = new CollectorRegistry($this->memory);
+        $this->collectorRegistry  = new CollectorRegistry($this->inMemoryObject);
     }
 
     /**
@@ -102,29 +111,29 @@ final class Prometheus implements Metrics
     }
 
     /**
-     * Delete all the metrics
-     *
-     * @return bool
-     */
-    public function flush()
-    {
-        $item = $this->pool->getItem('metrics')->set(new InMemory());
-        $this->pool->save($item);
-
-        # Point Prometheus to the new pool's item
-        $this->setMemory();
-        $this->setRegistry();
-    }
-
-    /**
      * Sync cache with memory content
      *
      * @return void
      */
     protected function syncCache()
     {
-       $item = $this->pool->getItem('metrics')->set($this->memory);
-       $this->pool->save($item);
+       $item = $this->cachePool->getItem('metrics')->set($this->inMemoryObject);
+       $this->cachePool->save($item);
+    }
+
+    /**
+     * Delete all the metrics
+     *
+     * @return bool
+     */
+    public function flush()
+    {
+        $item = $this->cachePool->getItem('metrics')->set(new InMemory());
+        $this->cachePool->save($item);
+
+        # Point Prometheus to the new pool's item
+        $this->recoverInMemoryFromCache();
+        $this->setCollectorRegistry();
     }
 
     /**
@@ -139,7 +148,7 @@ final class Prometheus implements Metrics
 
     public function registerCounter(string $name, string $description = '', array $labels = [])
     {
-        $counter = $this->registry->registerCounter($this->namespace, $name, $description, $labels);
+        $counter = $this->collectorRegistry->registerCounter($this->namespace, $name, $description, $labels);
 
         $this->syncCache();
     }
@@ -153,7 +162,7 @@ final class Prometheus implements Metrics
      */
     public function getCounter(string $name)
     {
-       $counter = $this->registry->getCounter($this->namespace, $name);
+       $counter = $this->collectorRegistry->getCounter($this->namespace, $name);
 
        $this->syncCache();
     }
@@ -169,7 +178,7 @@ final class Prometheus implements Metrics
      */
     public function getOrRegisterCounter(string $name, string $description = '', array $labels = [])
     {
-       $counter = $this->registry->getOrRegisterCounter($this->namespace, $name, $description, $labels);
+       $counter = $this->collectorRegistry->getOrRegisterCounter($this->namespace, $name, $description, $labels);
 
        $this->syncCache();
     }
@@ -185,7 +194,7 @@ final class Prometheus implements Metrics
      */
     public function setCounter(string $name, float $value = 1, array $labels = [])
     {
-        $counter = $this->registry->getCounter($this->namespace, $name);
+        $counter = $this->collectorRegistry->getCounter($this->namespace, $name);
         $counter->incBy($value, $labels);
 
         $this->syncCache();
@@ -202,7 +211,7 @@ final class Prometheus implements Metrics
       */
      public function registerGauge(string $name, string $description = '', array $labels = [])
     {
-        $counter = $this->registry->registerGauge($this->namespace, $name, $description, $labels);
+        $counter = $this->collectorRegistry->registerGauge($this->namespace, $name, $description, $labels);
 
         $this->syncCache();
     }
@@ -216,7 +225,7 @@ final class Prometheus implements Metrics
      */
     public function getGauge(string $name)
     {
-       $counter = $this->registry->getGauge($this->namespace, $name, $description, $labels);
+       $counter = $this->collectorRegistry->getGauge($this->namespace, $name, $description, $labels);
 
        $this->syncCache();
     }
@@ -232,7 +241,7 @@ final class Prometheus implements Metrics
      */
     public function getOrRegisterGauge(string $name, string $description = '', array $labels = [])
     {
-       $counter = $this->registry->getOrRegisterGauge($this->namespace, $name, $description, $labels);
+       $counter = $this->collectorRegistry->getOrRegisterGauge($this->namespace, $name, $description, $labels);
 
        $this->syncCache();
     }
@@ -248,7 +257,7 @@ final class Prometheus implements Metrics
       */
     public function setGauge(string $name, float $value, array $labels = [])
     {
-        $counter = $this->registry->getGauge($this->namespace, $name);
+        $counter = $this->collectorRegistry->getGauge($this->namespace, $name);
         $counter->set($value, $labels);
 
         $this->syncCache();
@@ -262,7 +271,7 @@ final class Prometheus implements Metrics
      public function renderMetrics(): string
      {
         $renderer = new RenderTextFormat();
-        $result = $renderer->render($this->registry->getMetricFamilySamples());
+        $result = $renderer->render($this->collectorRegistry->getMetricFamilySamples());
         return $result;
      }
 }
