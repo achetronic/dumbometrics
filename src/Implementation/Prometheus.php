@@ -76,7 +76,7 @@ final class Prometheus implements Metrics
      *
      * @return void
      */
-    public function recoverInMemoryFromCache() // TODO Improve the naming for this process
+    private function recoverInMemoryFromCache() // TODO Improve the naming for this process
     {
         // No metrics object on cache, generate a new one
         if ( !$this->cachePool->hasItem('metrics') ) {
@@ -94,7 +94,7 @@ final class Prometheus implements Metrics
      *
      * @return void
      */
-    public function setCollectorRegistry()
+    private function setCollectorRegistry()
     {
         $this->collectorRegistry  = new CollectorRegistry($this->inMemoryObject);
     }
@@ -115,7 +115,7 @@ final class Prometheus implements Metrics
      *
      * @return void
      */
-    protected function syncCache()
+    private function syncCache()
     {
        $item = $this->cachePool->getItem('metrics')->set($this->inMemoryObject);
        $this->cachePool->save($item);
