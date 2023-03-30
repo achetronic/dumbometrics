@@ -2,12 +2,12 @@
 
 namespace Achetronic\Dumbometrics\Controller;
 
-use \Achetronic\Dumbometrics\Implementation\Prometheus;
+use \Achetronic\Dumbometrics\Prometheus;
 
 final class ExampleController
 {
     /**
-     * @var \Achetronic\Dumbometrics\Implementation\Prometheus $metrics
+     * @var \Achetronic\Dumbometrics\Prometheus $metrics
      */
     private $metrics;
 

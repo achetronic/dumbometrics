@@ -171,9 +171,6 @@ final class Webserver implements Server
 
         echo "Metrics server running at http://".$this->getIp().':'.$this->getPort() . PHP_EOL;
         echo "/metrics instrumented for Prometheus". PHP_EOL;
-        echo "/example/metrics set some fake metrics". PHP_EOL;
-        echo "/example/flush flush all metrics". PHP_EOL;
-        echo "/example/delay set a fake delay". PHP_EOL;
 
         // Execute init callback when server starts
         if( !empty($initCallback) ){
