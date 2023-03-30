@@ -2,17 +2,15 @@
 
 declare( strict_types = 1 );
 
-namespace Achetronic\Dumbometrics\Implementation;
+namespace Achetronic\Dumbometrics;
 
-use \React\EventLoop\Factory;
 use \React\Http\Server as HttpServer;
 use \React\Socket\Server as SocketServer;
 use \React\Http\Message\Response as HttpResponse;
 use \Psr\Http\Message\ServerRequestInterface as HttpRequest;
 
 use \Achetronic\Dumbometrics\Contract\Server;
-use \Achetronic\Dumbometrics\Implementation\Prometheus;
-use \Achetronic\Dumbometrics\Controller\ExampleController;
+use \Achetronic\Dumbometrics\Prometheus;
 
 final class Webserver implements Server
 {
@@ -135,9 +133,7 @@ final class Webserver implements Server
         $requestInitCallback = $this->requestInitCallback;
         $requestFinalCallback = $this->requestFinalCallback;
 
-        $loop = Factory::create();
-
-        $server = new HttpServer($loop, function (HttpRequest $request) use ($requestInitCallback, $requestFinalCallback) {
+        $server = new HttpServer(function (HttpRequest $request) use ($requestInitCallback, $requestFinalCallback) {
 
             // Execute init callback on each request
             if( !empty($requestInitCallback) ){
@@ -158,36 +154,6 @@ final class Webserver implements Server
                 }
             }
 
-            if ($path === '/example/metrics') {
-                if ($method === 'GET') {
-                    $response = new HttpResponse(
-                        200,
-                        ['Content-Type' => 'text/plain'],
-                        (new ExampleController)->exampleMetricsAction()
-                    );
-                }
-            }
-
-            if ($path === '/example/flush') {
-                if ($method === 'GET') {
-                    $response = new HttpResponse(
-                        200,
-                        ['Content-Type' => 'text/plain'],
-                        (new ExampleController)->exampleFlushAction()
-                    );
-                }
-            }
-
-            if ($path === '/example/delay') {
-                if ($method === 'GET') {
-                    $response = new HttpResponse(
-                        200,
-                        ['Content-Type' => 'text/plain'],
-                        (new ExampleController)->exampleDelayAction()
-                    );
-                }
-            }
-
             if( empty($response) ){
                 $response = new HttpResponse(404, ['Content-Type' => 'text/plain'],  'Not found');
             }
@@ -200,7 +166,7 @@ final class Webserver implements Server
             return $response;
         });
 
-        $socket = new SocketServer($this->getIp().':'.$this->getPort(), $loop);
+        $socket = new SocketServer($this->getIp().':'.$this->getPort());
         $server->listen($socket);
 
         echo "Metrics server running at http://".$this->getIp().':'.$this->getPort() . PHP_EOL;
