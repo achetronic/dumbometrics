@@ -5,7 +5,7 @@
   "license": "GPL-3.0-or-later",
   "require": {
     "php": ">=7.2",
-    "matthiasmullie/scrapbook": "^1.5",
+    "matthiasmullie/scrapbook": "^1.4",
     "promphp/prometheus_client_php": "^2.6",
     "react/http": "^1.8"
   },
