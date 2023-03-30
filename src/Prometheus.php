@@ -2,7 +2,7 @@
 
 declare( strict_types = 1 );
 
-namespace Achetronic\Dumbometrics\Implementation;
+namespace Achetronic\Dumbometrics;
 
 use \Achetronic\Dumbometrics\Contract\Metrics;
 

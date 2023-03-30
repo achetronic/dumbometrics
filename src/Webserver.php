@@ -2,7 +2,7 @@
 
 declare( strict_types = 1 );
 
-namespace Achetronic\Dumbometrics\Implementation;
+namespace Achetronic\Dumbometrics;
 
 use \React\Http\Server as HttpServer;
 use \React\Socket\Server as SocketServer;
@@ -10,7 +10,7 @@ use \React\Http\Message\Response as HttpResponse;
 use \Psr\Http\Message\ServerRequestInterface as HttpRequest;
 
 use \Achetronic\Dumbometrics\Contract\Server;
-use \Achetronic\Dumbometrics\Implementation\Prometheus;
+use \Achetronic\Dumbometrics\Prometheus;
 
 final class Webserver implements Server
 {
