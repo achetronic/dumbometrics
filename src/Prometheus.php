@@ -1,19 +1,25 @@
 <?php
-
 declare( strict_types = 1 );
 
 namespace Achetronic\Dumbometrics;
 
 use \Achetronic\Dumbometrics\Contract\Metrics;
 
+# Prometheus related dependencies
 # REF: https://github.com/promphp/prometheus_client_php
 # REF: https://prometheus.io/docs/concepts/metric_types/
 use \Prometheus\CollectorRegistry;
 use \Prometheus\Storage\InMemory;
 use \Prometheus\RenderTextFormat;
 
-# Ref: https://github.com/apix/cache
-use Apix\Cache;
+# Cache related dependencies
+# Ref: https://github.com/matthiasmullie/scrapbook/tree/1.5.1#filesystem
+use \League\Flysystem\Local\LocalFilesystemAdapter;
+use \League\Flysystem\Filesystem;
+
+use \MatthiasMullie\Scrapbook\Adapters\Flysystem;
+use \MatthiasMullie\Scrapbook\Psr6\Pool;
+
 
 final class Prometheus implements Metrics
 {
@@ -62,11 +68,20 @@ final class Prometheus implements Metrics
      */
     private function setCachePool()
     {
-        $options['directory'] = sys_get_temp_dir() . '/achetronic/dumbometrics/';
-        $options['locking'] = true;
 
-        $files_cache = new Cache\Files($options);
-        $this->cachePool = Cache\Factory::getPool($files_cache);
+        // Create a filesystem from Fly-system
+        $adapter = new LocalFilesystemAdapter(
+            sys_get_temp_dir() . '/achetronic/dumbometrics/',
+            null,
+            LOCK_EX);
+
+        $filesystem = new Filesystem($adapter);
+
+        // Create Scrapbook KeyValueStore object
+        $cache = new Flysystem($filesystem);
+
+        // Create Pool object (PSR-6) from Scrapbook KeyValueStore object
+        $this->cachePool = new Pool($cache);
     }
 
     /**
