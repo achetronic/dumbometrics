@@ -12,7 +12,7 @@ use \Prometheus\CollectorRegistry;
 use \Prometheus\Storage\InMemory;
 use \Prometheus\RenderTextFormat;
 
-# Ref:
+# Ref: https://github.com/apix/cache
 use Apix\Cache;
 
 final class Prometheus implements Metrics
