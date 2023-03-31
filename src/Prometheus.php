@@ -14,15 +14,21 @@ use \Prometheus\RenderTextFormat;
 
 # Cache related dependencies
 # Ref: https://github.com/matthiasmullie/scrapbook/tree/1.5.1#filesystem
+# Ref: https://github.com/matthiasmullie/scrapbook/tree/1.5.1#apcu
 use \League\Flysystem\Local\LocalFilesystemAdapter;
 use \League\Flysystem\Filesystem;
 
 use \MatthiasMullie\Scrapbook\Adapters\Flysystem;
+use \MatthiasMullie\Scrapbook\Adapters\Apc;
 use \MatthiasMullie\Scrapbook\Psr6\Pool;
 
+//
 
 final class Prometheus implements Metrics
 {
+    const DEFAULT_METRICS_NAMESPACE = 'dumbometrics';
+    const DEFAULT_CACHE_BACKEND = 'fs';
+
     /**
      * Pointer to the cache pool
      */
@@ -50,10 +56,8 @@ final class Prometheus implements Metrics
      */
     public function __Construct()
     {
-        $this->setNamespace("dumbometrics");
-        if( !empty($_SERVER['METRICS_NAMESPACE']) ) {
-            $this->setNamespace(strtolower($_SERVER['METRICS_NAMESPACE']));
-        }
+        $namespace = getenv('DUMBOMETRICS_METRICS_NAMESPACE', true) ?: self::DEFAULT_METRICS_NAMESPACE;
+        $this->setNamespace(strtolower($namespace));
 
         $this->setCachePool();
         $this->recoverInMemoryFromCache();
@@ -68,6 +72,15 @@ final class Prometheus implements Metrics
      */
     private function setCachePool()
     {
+        $cacheBackend = getenv('DUMBOMETRICS_CACHE_BACKEND', true) ?: self::DEFAULT_CACHE_BACKEND;
+
+        // TODO implement more persistent backends
+        if ($cacheBackend == "placeholder") {
+            goto createCachePool;
+        }
+
+        // Fall into default option
+        syslog(LOG_INFO, 'Filesystem backend selected');
 
         // Create a filesystem from Fly-system
         $adapter = new LocalFilesystemAdapter(
@@ -80,6 +93,7 @@ final class Prometheus implements Metrics
         // Create Scrapbook KeyValueStore object
         $cache = new Flysystem($filesystem);
 
+        createCachePool:
         // Create Pool object (PSR-6) from Scrapbook KeyValueStore object
         $this->cachePool = new Pool($cache);
     }
@@ -287,6 +301,7 @@ final class Prometheus implements Metrics
      {
         $renderer = new RenderTextFormat();
         $result = $renderer->render($this->collectorRegistry->getMetricFamilySamples());
+
         return $result;
      }
 }

@@ -12,8 +12,13 @@ use \Psr\Http\Message\ServerRequestInterface as HttpRequest;
 use \Achetronic\Dumbometrics\Contract\Server;
 use \Achetronic\Dumbometrics\Prometheus;
 
+//
+
 final class Webserver implements Server
 {
+    const DEFAULT_METRICS_IP = '0.0.0.0';
+    const DEFAULT_METRICS_PORT = '9090';
+
     protected $ip;
 
     protected $port;
@@ -30,15 +35,8 @@ final class Webserver implements Server
      */
     public function __construct()
     {
-        $this->setIp('0.0.0.0');
-        if( !empty($_SERVER['METRICS_IP']) ) {
-            $this->setIp( $_SERVER['METRICS_IP'] );
-        }
-
-        $this->setPort('9090');
-        if( !empty($_SERVER['METRICS_PORT']) ) {
-            $this->setPort( $_SERVER['METRICS_PORT'] );
-        }
+        $this->setIp( getenv('DUMBOMETRICS_METRICS_IP', true) ?: self::DEFAULT_METRICS_IP );
+        $this->setPort( getenv('DUMBOMETRICS_METRICS_PORT', true) ?: self::DEFAULT_METRICS_PORT );
 
         $this->initCallback = null;
         $this->requestInitCallback = null;
@@ -133,6 +131,9 @@ final class Webserver implements Server
         $requestInitCallback = $this->requestInitCallback;
         $requestFinalCallback = $this->requestFinalCallback;
 
+        //$metrics = new Prometheus;
+        //var_dump($metrics);
+
         $server = new HttpServer(function (HttpRequest $request) use ($requestInitCallback, $requestFinalCallback) {
 
             // Execute init callback on each request
@@ -142,20 +143,19 @@ final class Webserver implements Server
 
             $path = $request->getUri()->getPath();
             $method = $request->getMethod();
-            $response = null;
 
             if ($path === '/metrics') {
                 if ($method === 'GET') {
-                    $response = new HttpResponse(
-                        200,
-                        ['Content-Type' => 'text/plain'],
-                        (new Prometheus)->renderMetrics()
-                    );
+                    $metrics = new Prometheus;
+                    return HttpResponse::plaintext($metrics->renderMetrics());
                 }
             }
 
-            if( empty($response) ){
-                $response = new HttpResponse(404, ['Content-Type' => 'text/plain'],  'Not found');
+            if ($path === '/metrics/flush') {
+                if ($method === 'GET') {
+                    $metrics = new Prometheus;
+                    return HttpResponse::plaintext($metrics->flush());
+                }
             }
 
             // Execute final callback on each request
@@ -163,7 +163,7 @@ final class Webserver implements Server
                 $requestFinalCallback();
             }
 
-            return $response;
+            return HttpResponse::plaintext('Not found');
         });
 
         $socket = new SocketServer($this->getIp().':'.$this->getPort());
@@ -176,7 +176,5 @@ final class Webserver implements Server
         if( !empty($initCallback) ){
             $initCallback();
         }
-
-        $loop->run();
     }
 }

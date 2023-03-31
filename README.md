@@ -134,11 +134,11 @@ $server->loop();
 Some options can be configured by setting environment variables. 
 You have all of them in the following table:
 
-| Environment         | Description                                                         |
-|---------------------|---------------------------------------------------------------------|
-| `METRICS_IP`        | The IP server will be listening on. By default `0.0.0.0`            |
-| `METRICS_PORT`      | The port server will be listening on. By default `9090`             |
-| `METRICS_NAMESPACE` | The namespace where the server will work. By default `dumbometrics` |
+| Environment                      | Description                                                         |
+|----------------------------------|---------------------------------------------------------------------|
+| `DUMBOMETRICS_METRICS_IP`        | The IP server will be listening on. By default `0.0.0.0`            |
+| `DUMBOMETRICS_METRICS_PORT`      | The port server will be listening on. By default `9090`             |
+| `DUMBOMETRICS_METRICS_NAMESPACE` | The namespace where the server will work. By default `dumbometrics` |
 
 ## How to collaborate
 
